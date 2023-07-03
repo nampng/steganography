@@ -3,10 +3,12 @@ import numpy as np
 import random
 from types import FunctionType
 
-"""
-Select a random channel to store data.
-"""
-def change_pixel_channel_simple(value: int, row: int, pix: int, image):
+
+def encode_simple(value: int, row: int, pix: int, image):
+    """
+    Select a random channel to store data.
+    """
+
     channel = random.randint(0, 2)
 
     if image[row][pix][channel] + value < 255:
@@ -14,34 +16,12 @@ def change_pixel_channel_simple(value: int, row: int, pix: int, image):
     else:
         image[row][pix][channel] -= value
 
-"""
-Spread the data between all channels to make pixel change more subtle.
 
-if divisble by 3, easy
+def encode_split(value: int, row: int, pix: int, image):
+    """
+    Split the data between all channels to make pixel change more subtle.
+    """
 
-if not, hard? everything will end in .33 or .66
-
-10 / 3 = 3.33 -> 3 + 3 + 4 -> if it ends in 3.33 add 1 to the ones place
- 
-8 / 3 = 2.66 -> 2 + 2 + 4 -> if it ends in .66 add 2 to ones place
-
-more examples:
-
-61 / 3 = 20.33 -> 20 + 20 + 21 = 61
-62 / 3 = 20.66 -> 20 + 20 + 22 = 62
-
-71 / 3 = 23.66 -> 23 + 23 + 25 = 71
-
-Not really sure how to detect the .33 or .66 so I'll just do it in a way that makes sense to me.
-
-If rounded down, rounded + rounded + rounded + 1
-If rounded up, rounded + rounded + rounded - 1
-
-61 / 3 = 20.33 -> 20 + 20 + 21 = 61
-
-71 / 3 = 23.66 -> 24 + 24 + 23 = 71
-"""
-def change_pixel_channel_spread(value: int, row: int, pix: int, image):
     values = []
     interval = value / 3
 
@@ -60,7 +40,12 @@ def change_pixel_channel_spread(value: int, row: int, pix: int, image):
         else:
             image[row][pix][channel] -= val
 
-def decode_simple_pixel(original_pixel: np.array, altered_pixel: np.array) -> str:
+
+def decode_simple(original_pixel: np.array, altered_pixel: np.array) -> str:
+    """
+    Decode a pixel that was encoded with simple algo.
+    """
+
     original_pixel = original_pixel.astype(np.int16)
     altered_pixel = altered_pixel.astype(np.int16)
 
@@ -69,11 +54,17 @@ def decode_simple_pixel(original_pixel: np.array, altered_pixel: np.array) -> st
     condition = np.not_equal(delta, np.zeros((1, 3)))
     unicode_value = abs(np.extract(condition, delta)[0])
 
-    # print(original_pixel, altered_pixel, delta, unicode_value, chr(unicode_value))
+    print(original_pixel, altered_pixel, delta, unicode_value, chr(unicode_value))
 
     return chr(unicode_value)
 
-def decode_spread_pixel(original_pixel: np.array, altered_pixel: np.array) -> str:
+
+def decode_split(original_pixel: np.array, altered_pixel: np.array) -> str:
+    """
+    Decode a pixel that was encoded with split algo. 
+    Can also decode simple algo.
+    """
+
     original_pixel = original_pixel.astype(np.int16)
     altered_pixel = altered_pixel.astype(np.int16)
 
@@ -82,14 +73,17 @@ def decode_spread_pixel(original_pixel: np.array, altered_pixel: np.array) -> st
 
     unicode_value = int(np.sum(delta))
 
-    # print(original_pixel, altered_pixel, delta, unicode_value, chr(unicode_value))
+    print(original_pixel, altered_pixel, delta, unicode_value, chr(unicode_value))
 
     return chr(unicode_value)
 
-"""
-Store the secret string by just writing each pixel by row and column. Very simple and noticeable.
-"""
-def store_secret_string_simple(secret_str: str, file_path: str, encoder: FunctionType):
+
+def store_sequential(secret_str: str, file_path: str, encoder: FunctionType):
+    """
+    Store the secret string by just writing each pixel by row and column. Very simple and noticeable.
+    Will alter pixel depending on given encoder function.
+    """
+
     print("SIMPLE - Storing secret into image...")
     image = cv2.imread(file_path)
     rows, cols, _ = image.shape
@@ -110,10 +104,13 @@ def store_secret_string_simple(secret_str: str, file_path: str, encoder: Functio
 
             encoder(ord(char), row, pix, image)
 
-"""
-Make an effort to hide the changed pixels by spreading them out throughout the image.
-"""
-def store_secret_string_spread(secret_str: str, file_path: str, encoder: FunctionType):
+
+def store_spread(secret_str: str, file_path: str, encoder: FunctionType):
+    """
+    Make an effort to hide the changed pixels by spreading them out throughout the image.
+    Will alter pixel depending on given encoder function.
+    """
+
     print("SPREAD - Storing secret into image...")
     image = cv2.imread(file_path)
     rows, cols, _ = image.shape
@@ -151,10 +148,13 @@ def store_secret_string_spread(secret_str: str, file_path: str, encoder: Functio
 
                 encoder(ord(char), row, pix, image)
 
-"""
-Decode the hidden message by comparing every single pixel between the old and new image.
-"""
-def decode_secret_string(original_file_path: str, alt_file_path: str, decoder: FunctionType) -> str:
+
+def get_secret_string(original_file_path: str, alt_file_path: str, decoder: FunctionType) -> str:
+    """
+    Decode the hidden message by comparing every single pixel between the old and new image.
+    The pair of pixels will be given to the given decoder function.
+    """
+
     print("Decoding image.")
 
     original = cv2.imread(original_file_path)
@@ -178,13 +178,13 @@ def read_secret_from_file(file_path: str) -> str:
                 
 if __name__ == "__main__": 
     secret_str = read_secret_from_file("secret_string.txt")
-    file_path = "inputs/blizzard.jpg"
+    file_path = "inputs/white.jpg"
     file_name = file_path.split('.')[0].split('/')[1]
 
-    # store_secret_string_simple(secret_str=secret_str, file_path=file_path, encoder=change_pixel_channel_spread)
-    # secret = decode_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png", decoder=decode_spread_pixel)
+    # store_simple(secret_str=secret_str, file_path=file_path)
+    # secret = get_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png", decoder=decode_split)
 
-    store_secret_string_spread(secret_str=secret_str, file_path=file_path, encoder=change_pixel_channel_spread)
-    secret = decode_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png", decoder=decode_spread_pixel)
+    store_spread(secret_str=secret_str, file_path=file_path, encoder=encode_split)
+    secret = get_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png", decoder=decode_simple)
 
     print("Decoded secret is", secret)
