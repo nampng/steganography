@@ -2,6 +2,14 @@ import cv2
 import numpy as np
 import random
 
+def change_random_pixel_channel(value: int, row: int, pix: int, image):
+    channel = random.randint(0, 2)
+
+    if image[row][pix][channel] + value < 255:
+        image[row][pix][channel] += value
+    else:
+        image[row][pix][channel] -= value
+
 """
 Store the secret string by just writing each pixel by row and column. Very simple and noticeable.
 """
@@ -11,28 +19,20 @@ def store_secret_string_simple(secret_str: str, file_path: str):
     rows, cols, _ = image.shape
     secret = list(secret_str)
 
-    for row in range(rows):
-        if not secret:
-            break
+    if rows * cols < len(secret):
+        raise ValueError("More data than pixels.")
 
+    for row in range(rows):
         for pix in range(cols):
             if not secret:
-                break
+                file_name = file_path.split('.')[0].split('/')[1]
+                cv2.imwrite("outputs/output-"+file_name+".png", image)
+                print("Done!")
+                return
 
-            char = secret.pop(0)
+            char = secret.pop()
 
-            val = ord(char)
-
-            random_index = random.randint(0, 2)
-
-            if image[row][pix][random_index] + val < 255:
-                image[row][pix][random_index] += val
-            else:
-                image[row][pix][random_index] -= val
-
-    file_name = file_path.split('.')[0].split('/')[1]
-    cv2.imwrite("outputs/output-"+file_name+".png", image)
-    print("Done!")
+            change_random_pixel_channel(ord(char), row, pix, image)
 
 """
 Make an effort to hide the changed pixels by spreading them out throughout the image.
@@ -46,16 +46,15 @@ Divide 10000 by 10, each character will be randomly placed within their 1000 pix
 We're going to do it the dumb way first and then optimize.
 """
 def store_secret_string_spread(secret_str: str, file_path: str):
+    print("SPREAD - Storing secret into image...")
     image = cv2.imread(file_path)
-    secret = list(secret_str)
     rows, cols, _ = image.shape
-
     total = rows * cols
-
+    
+    secret = list(secret_str)
     interval = total // len(secret)
 
     if interval == 0:
-        print("Too much data. Can't do it man!")
         raise ValueError("More data than pixels, cannot spread since interval == 0")
 
     count = 0
@@ -69,35 +68,27 @@ def store_secret_string_spread(secret_str: str, file_path: str):
     count = 0
 
     for row in range(rows):
-        if not secret:
-            break
         for pix in range(cols):
             if not secret:
-                break
+                file_name = file_path.split('.')[0].split('/')[1]
+                cv2.imwrite("outputs/output-"+file_name+".png", image)
+                print("Done!")
+                return
 
             count += 1
 
             if count == indexes[0]:
                 indexes.pop(0)
-                char = secret.pop(0)
+                char = secret.pop()
 
-                val = ord(char)
-                
-                random_index = random.randint(0, 2)
+                change_random_pixel_channel(ord(char), row, pix, image)
 
-                if image[row][pix][random_index] + val < 255:
-                    image[row][pix][random_index] += val
-                else:
-                    image[row][pix][random_index] -= val
-
-    file_name = file_path.split('.')[0].split('/')[1]
-    cv2.imwrite("outputs/output-"+file_name+".png", image)
-    print("Done!")
+    
 
 """
 Decode the hidden message by comparing every single pixel between the old and new image.
 """
-def decode_secret_string(original_file_path: str, alt_file_path: str):
+def decode_secret_string(original_file_path: str, alt_file_path: str) -> str:
     print("Decoding image.")
 
     original = cv2.imread(original_file_path)
@@ -114,7 +105,7 @@ def decode_secret_string(original_file_path: str, alt_file_path: str):
                     val = abs(int(alt_pix) - int(orig_pix))
                     secret_str.append(chr(val))
 
-    return ''.join(secret_str)
+    return ''.join(reversed(secret_str))
 
 def read_secret_from_file(file_path: str) -> str:
     with open(file_path, 'r') as file:
@@ -124,6 +115,7 @@ if __name__ == "__main__":
     secret_str = read_secret_from_file("secret_string.txt")
     file_path = "inputs/minecraft_house.jpg"
     file_name = file_path.split('.')[0].split('/')[1]
+    # store_secret_string_simple(secret_str=secret_str, file_path=file_path)
     store_secret_string_spread(secret_str=secret_str, file_path=file_path)
     secret = decode_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png")
     print("Decoded secret is", secret)
