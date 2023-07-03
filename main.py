@@ -42,14 +42,17 @@ If rounded up, rounded + rounded + rounded - 1
 71 / 3 = 23.66 -> 24 + 24 + 23 = 71
 """
 def change_pixel_channel_spread(value: int, row: int, pix: int, image):
-    interval = value / 3
-    rounded = round(interval)
     values = []
+    interval = value / 3
 
-    if interval < rounded: # rounded up
-        values = [rounded, rounded, rounded - 1]
-    else: # rounded down
-        values = [rounded, rounded, rounded + 1]
+    if interval.is_integer():
+        values = [interval, interval, interval]
+    else:
+        rounded = round(interval)
+        if interval < rounded: # rounded up
+            values = [rounded, rounded, rounded - 1]
+        else: # rounded down
+            values = [rounded, rounded, rounded + 1]
 
     for channel, val in zip(range(3), values):
         if image[row][pix][channel] + val < 255:
@@ -66,7 +69,7 @@ def decode_simple_pixel(original_pixel: np.array, altered_pixel: np.array) -> st
     condition = np.not_equal(delta, np.zeros((1, 3)))
     unicode_value = abs(np.extract(condition, delta)[0])
 
-    print(original_pixel, altered_pixel, delta, unicode_value)
+    # print(original_pixel, altered_pixel, delta, unicode_value, chr(unicode_value))
 
     return chr(unicode_value)
 
@@ -77,9 +80,9 @@ def decode_spread_pixel(original_pixel: np.array, altered_pixel: np.array) -> st
     delta = np.subtract(altered_pixel, original_pixel)
     delta = np.abs(delta)
 
-    unicode_value = np.sum(delta)
+    unicode_value = int(np.sum(delta))
 
-    print(original_pixel, altered_pixel, delta, unicode_value)
+    # print(original_pixel, altered_pixel, delta, unicode_value, chr(unicode_value))
 
     return chr(unicode_value)
 
@@ -161,12 +164,10 @@ def decode_secret_string(original_file_path: str, alt_file_path: str, decoder: F
 
     secret_str = []
 
-    for row in range(10):
+    for row in range(rows):
         for pix in range(cols):
             if not (original[row][pix] == altered[row][pix]).all():
                 char = decoder(original[row][pix], altered[row][pix])
-
-                print(char)
                 secret_str.append(char)
 
     return ''.join(reversed(secret_str))
@@ -177,13 +178,13 @@ def read_secret_from_file(file_path: str) -> str:
                 
 if __name__ == "__main__": 
     secret_str = read_secret_from_file("secret_string.txt")
-    file_path = "inputs/black.jpg"
+    file_path = "inputs/blizzard.jpg"
     file_name = file_path.split('.')[0].split('/')[1]
 
-    store_secret_string_spread(secret_str=secret_str, file_path=file_path, encoder=change_pixel_channel_simple)
-    secret = decode_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png", decoder=decode_simple_pixel)
-
-    # store_secret_string_spread(secret_str=secret_str, file_path=file_path, encoder=change_pixel_channel_spread)
+    # store_secret_string_simple(secret_str=secret_str, file_path=file_path, encoder=change_pixel_channel_spread)
     # secret = decode_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png", decoder=decode_spread_pixel)
+
+    store_secret_string_spread(secret_str=secret_str, file_path=file_path, encoder=change_pixel_channel_spread)
+    secret = decode_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png", decoder=decode_spread_pixel)
 
     print("Decoded secret is", secret)
