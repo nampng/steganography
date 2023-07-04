@@ -1,5 +1,7 @@
 # steganography
 
+Video demonstration: https://youtu.be/olwpzWrJk8U
+
 A small weekend project for exploring steganography.
 
 The two main files you'll be interested in will be `encoder.py` and `decoder.py`.
