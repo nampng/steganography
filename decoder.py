@@ -76,7 +76,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--save", action="store_true")
     args = parser.parse_args()
 
-    print(args)
+    # print(args)
 
     if args.decoder == "simple":
         decoder = decode_simple

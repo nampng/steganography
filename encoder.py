@@ -58,7 +58,13 @@ def store_sequential(secret_str: str, file_path: str, output_dir: str, encoder: 
     for row in range(rows):
         for pix in range(cols):
             if not secret:
-                file_name = file_path.split('.')[0]
+                r = file_path.rindex(".")
+                l = file_path.rindex("/")
+
+                file_name = file_path[l+1:r]
+
+                # print(file_name)
+
                 cv2.imwrite(f"{output_dir}/output-"+file_name+".png", image)
                 print("Done!")
                 return
@@ -103,7 +109,7 @@ def store_spread(secret_str: str, file_path: str, output_dir: str, encoder: Func
 
                 file_name = file_path[l+1:r]
 
-                print(file_name)
+                # print(file_name)
 
                 cv2.imwrite(f"{output_dir}/output-"+file_name+".png", image)
                 print("Done!")
@@ -143,7 +149,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(args)
+    # print(args)
 
     if args.store == "seq":
         store = store_sequential
@@ -155,9 +161,9 @@ if __name__ == "__main__":
     else:
         encoder = encode_split
 
-    # try:
-    secret = read_secret_from_file(file_path=args.secret_text_path)
-    store(secret_str=secret, file_path=args.image_path, output_dir=args.output,  encoder=encoder)
+    try:
+        secret = read_secret_from_file(file_path=args.secret_text_path)
+        store(secret_str=secret, file_path=args.image_path, output_dir=args.output,  encoder=encoder)
 
-    # except Exception as e:
-    #     print(e)
+    except Exception as e:
+        print(e)
