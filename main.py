@@ -175,16 +175,16 @@ def get_secret_string(original_file_path: str, alt_file_path: str, decoder: Func
 def read_secret_from_file(file_path: str) -> str:
     with open(file_path, 'r') as file:
         return file.read()
-                
-if __name__ == "__main__": 
+
+if __name__ == "__main__":
     secret_str = read_secret_from_file("secret_string.txt")
-    file_path = "inputs/white.jpg"
+    file_path = "inputs/minecraft_house.jpg"
     file_name = file_path.split('.')[0].split('/')[1]
 
     # store_simple(secret_str=secret_str, file_path=file_path)
     # secret = get_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png", decoder=decode_split)
 
     store_spread(secret_str=secret_str, file_path=file_path, encoder=encode_split)
-    secret = get_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png", decoder=decode_simple)
+    secret = get_secret_string(original_file_path=file_path, alt_file_path="outputs/output-"+file_name+".png", decoder=decode_split)
 
     print("Decoded secret is", secret)
